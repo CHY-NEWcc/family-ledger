@@ -1,0 +1,22 @@
+{
+  "name": "jtjz",
+  "version": "2.0.0",
+  "description": "极简记账 - 个人财务记账工具 v2.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "bookkeeping",
+    "finance"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "xlsx": "^0.18.5"
+  }
+}
