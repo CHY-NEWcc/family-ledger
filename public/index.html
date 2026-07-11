@@ -274,7 +274,7 @@ input, select, textarea { outline: none; }
 
 /* ===== 年度总结 ===== */
 .annual-summary-row {
-  display: grid; grid-template-columns: repeat(4, 1fr);
+  display: grid; grid-template-columns: repeat(5, 1fr);
   gap: var(--spacing-sm); margin-bottom: var(--spacing-lg);
 }
 .annual-card {
@@ -300,7 +300,7 @@ input, select, textarea { outline: none; }
 
 @media (max-width: 480px) {
   .summary-row { grid-template-columns: 1fr; }
-  .annual-summary-row { grid-template-columns: repeat(2, 1fr); }
+  .annual-summary-row { grid-template-columns: repeat(3, 1fr); }
   .summary-card { padding: var(--spacing-sm) var(--spacing-md); }
   .summary-card .amount { font-size: 22px; }
   .tab-btn { padding: var(--spacing-sm) var(--spacing-md); font-size: 13px; }
@@ -368,8 +368,12 @@ input, select, textarea { outline: none; }
       <div class="a-amount" id="annualBalance">¥0.00</div>
     </div>
     <div class="annual-card yr-total">
-      <div class="a-label">总结存</div>
+      <div class="a-label">年度结余</div>
       <div class="a-amount" id="totalBalance">¥0.00</div>
+    </div>
+    <div class="annual-card yr-total-all">
+      <div class="a-label">总结余</div>
+      <div class="a-amount" id="totalBalanceAll">¥0.00</div>
     </div>
   </section>
   <nav class="tab-nav" id="tabNav">
@@ -1454,9 +1458,13 @@ document.getElementById('inputDate').value = getToday();
     return { income: income, expense: expense, balance: income - expense };
   }
 
-  // 全部汇总（含初始结存）
-  function getTotalSummary(fund) {
+  // 全部汇总（含初始结存，可选截止年度）
+  function getTotalSummary(fund, year) {
     var bills = getBills();
+    if (year) {
+      var endYear = parseInt(year);
+      bills = bills.filter(function(b) { return parseInt(b.date.substring(0,4)) <= endYear; });
+    }
     if (fund) bills = bills.filter(function(b) { return b.fund === fund; });
     var income = 0, expense = 0;
     bills.forEach(function(b) {
@@ -1474,7 +1482,18 @@ document.getElementById('inputDate').value = getToday();
     return { income: income, expense: expense, balance: income - expense + initialBalance };
   }
 
-  // 渲染年度结存 + 总结存
+  // 总结余 = 各年度结余之和
+  function getGrandTotal(fund) {
+    var years = {};
+    getBills().forEach(function(b) { years[b.date.substring(0,4)] = true; });
+    var total = 0;
+    Object.keys(years).sort().forEach(function(y) {
+      total += getTotalSummary(fund, y).balance;
+    });
+    return total;
+  }
+
+  // 渲染年度结余 + 总结余
   function renderAnnualTotalBalance() {
     var year = document.getElementById('yearSelector').value;
     var fund = document.getElementById('fundBalanceSelector').value;
@@ -1485,10 +1504,17 @@ document.getElementById('inputDate').value = getToday();
     balEl.textContent = (ys.balance >= 0 ? '¥' : '-¥') + Math.abs(ys.balance).toFixed(2);
     balEl.style.color = ys.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
 
-    var ts = getTotalSummary(fund);
+    // 年度结余：截止到选中年度
+    var ts = getTotalSummary(fund, year);
     var totalEl = document.getElementById('totalBalance');
     totalEl.textContent = (ts.balance >= 0 ? '¥' : '-¥') + Math.abs(ts.balance).toFixed(2);
     totalEl.style.color = ts.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
+
+    // 总结余：各年度结余之和
+    var tsAll = { balance: getGrandTotal(fund) };
+    var totalAllEl = document.getElementById('totalBalanceAll');
+    totalAllEl.textContent = (tsAll.balance >= 0 ? '¥' : '-¥') + Math.abs(tsAll.balance).toFixed(2);
+    totalAllEl.style.color = tsAll.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
   }
 
   function populateYearSelector() {
