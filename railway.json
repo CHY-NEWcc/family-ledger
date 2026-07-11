@@ -1,0 +1,15 @@
+{
+    "build":  {
+                  "builder":  "NIXPACKS"
+              },
+    "$schema":  "https://railway.app/railway.schema.json",
+    "service":  {
+                    "volumes":  [
+                                    "/data"
+                                ]
+                },
+    "deploy":  {
+                   "numReplicas":  1,
+                   "startCommand":  "node server.js"
+               }
+}
