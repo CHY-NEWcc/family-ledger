@@ -247,12 +247,60 @@ input, select, textarea { outline: none; }
 .fund-table tr.total-row td { border-top: 2px solid var(--color-text); border-bottom: none; font-weight: 700; background: #f8fafc; }
 .fund-table tr.total-row .amount-balance { font-size: 16px; }
 
+
+/* ===== 饼图 ===== */
+.pie-chart-wrap { display: flex; align-items: center; gap: var(--spacing-lg); margin-top: var(--spacing-sm); flex-wrap: wrap; }
+.pie-chart-wrap .pie-svg { flex-shrink: 0; }
+.pie-chart-wrap .pie-legend { flex: 1; min-width: 180px; }
+.pie-legend-item { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: 6px; font-size: 13px; }
+.pie-legend-item .pie-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.pie-legend-item .pie-name { flex: 1; font-weight: 500; }
+.pie-legend-item .pie-pct { color: var(--color-text-secondary); font-size: 12px; }
+
+/* ===== 消费分析 ===== */
+.analysis-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-sm); margin-top: var(--spacing-sm); }
+.analysis-card {
+  background: var(--color-card); border-radius: var(--radius-md); padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+}
+.analysis-card .a-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.analysis-card .a-value { font-size: 20px; font-weight: 700; }
+.analysis-card .a-detail { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+.analysis-insight {
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md);
+  padding: var(--spacing-md); margin-top: var(--spacing-sm); font-size: 13px;
+  color: #92400e; line-height: 1.6;
+}
+
+/* ===== 年度总结 ===== */
+.annual-summary-row {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm); margin-bottom: var(--spacing-lg);
+}
+.annual-card {
+  background: var(--color-card); border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-shadow: var(--shadow-card); text-align: center;
+}
+.annual-card .a-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
+.annual-card .a-amount { font-size: 22px; font-weight: 700; }
+.annual-card.yr-income .a-amount { color: var(--color-income); }
+.annual-card.yr-expense .a-amount { color: var(--color-expense); }
+.annual-card.yr-balance .a-amount { color: var(--color-primary); }
+.annual-card.yr-total .a-amount { color: #6366f1; }
+
+/* year selector */
+.year-selector-row { display: flex; justify-content: flex-end; margin-bottom: var(--spacing-md); gap: var(--spacing-sm); align-items: center; }
+.year-selector-row .year-label { font-size: 12px; color: var(--color-text-secondary); }
+.year-selector-row select { width: auto; min-width: 90px; }
+
 /* 筛选栏布局 */
 .filter-bar { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; }
 .filter-bar select, .filter-bar input { flex: 1; min-width: 100px; }
 
 @media (max-width: 480px) {
   .summary-row { grid-template-columns: 1fr; }
+  .annual-summary-row { grid-template-columns: repeat(2, 1fr); }
   .summary-card { padding: var(--spacing-sm) var(--spacing-md); }
   .summary-card .amount { font-size: 22px; }
   .tab-btn { padding: var(--spacing-sm) var(--spacing-md); font-size: 13px; }
@@ -293,7 +341,37 @@ input, select, textarea { outline: none; }
       <div class="amount" id="summaryBalance">¥0.00</div>
     </div>
   </section>
-
+  <div class="year-selector-row">
+    <span class="year-label">基金：</span>
+    <select class="form-select short" id="fundBalanceSelector">
+      <option value="">全部基金</option>
+      <option value="基础基金">基础基金</option>
+      <option value="育儿基金">育儿基金</option>
+      <option value="教育基金">教育基金</option>
+      <option value="备用基金">备用基金</option>
+      <option value="小羡收入">小羡收入</option>
+    </select>
+    <span class="year-label">年度：</span>
+    <select class="form-select short" id="yearSelector"></select>
+  </div>
+<section class="annual-summary-row" id="annualSummaryRow">
+    <div class="annual-card yr-income">
+      <div class="a-label">年度收入</div>
+      <div class="a-amount" id="annualIncome">¥0.00</div>
+    </div>
+    <div class="annual-card yr-expense">
+      <div class="a-label">年度支出</div>
+      <div class="a-amount" id="annualExpense">¥0.00</div>
+    </div>
+    <div class="annual-card yr-balance">
+      <div class="a-label">年度结存</div>
+      <div class="a-amount" id="annualBalance">¥0.00</div>
+    </div>
+    <div class="annual-card yr-total">
+      <div class="a-label">总结存</div>
+      <div class="a-amount" id="totalBalance">¥0.00</div>
+    </div>
+  </section>
   <nav class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="add">记账</button>
     <button class="tab-btn" data-tab="bills">账单</button>
@@ -383,32 +461,49 @@ input, select, textarea { outline: none; }
     <!-- 统计面板 -->
     <section class="tab-panel" id="panel-stats">
       <div class="stats-section">
-        <div class="section-title">??????</div>
+        <div class="section-title">支出分类占比</div>
         <div id="expenseStats"></div>
         <div class="empty-state" id="statsExpenseEmpty" style="display:none">
-          <div class="empty-icon">??</div>
-          <div class="empty-text">????????</div>
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">暂无支出数据</div>
         </div>
       </div>
       <div class="stats-section">
-        <div class="section-title">??????</div>
+        <div class="section-title">收入分类占比</div>
         <div id="incomeStats"></div>
         <div class="empty-state" id="statsIncomeEmpty" style="display:none">
-          <div class="empty-icon">??</div>
-          <div class="empty-text">????????</div>
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">暂无收入数据</div>
         </div>
       </div>
       <div class="stats-section">
-        <div class="section-title">??????</div>
+        <div class="section-title">基金月度概览</div>
         <div id="fundTableContainer"></div>
         <div class="empty-state" id="statsFundEmpty" style="display:none">
-          <div class="empty-icon">??</div>
-          <div class="empty-text">????????</div>
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">暂无基金数据</div>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <div class="section-title">支出分类饼图</div>
+        <div id="pieChartContainer"></div>
+        <div class="empty-state" id="statsPieEmpty" style="display:none">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">暂无支出数据</div>
+        </div>
+      </div>
+      <div class="stats-section">
+        <div class="section-title">消费分析</div>
+        <div id="consumptionAnalysis"></div>
+        <div class="empty-state" id="statsAnalysisEmpty" style="display:none">
+          <div class="empty-icon">📝</div>
+          <div class="empty-text">暂无消费数据可供分析</div>
         </div>
       </div>
     </section>
 
-    <!-- ?????? -->
+    <!-- 分类管理 -->
 <section class="tab-panel" id="panel-categories">
       <div style="display:flex;gap:8px;margin-bottom:16px">
         <button class="btn btn-outline btn-sm category-type-filter active" data-cate-type="all">全部</button>
@@ -464,10 +559,10 @@ input, select, textarea { outline: none; }
     </div>
   </div>
 
-  <!-- ??????? -->
+  <!-- 导入模态框 -->
   <div class="modal-overlay" id="importModal">
     <div class="modal" style="max-width:600px">
-      <div class="modal-title">Excel ????</div>
+      <div class="modal-title">Excel 导入预览</div>
       <div class="modal-body" id="importPreview" style="max-height:400px;overflow-y:auto"></div>
       <div style="padding:8px 0;font-size:13px;color:var(--color-text-secondary)" id="importSummary"></div>
       <div class="modal-footer">
@@ -610,7 +705,7 @@ function getToday() {
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-// ????????????????
+// 设置默认日期为今天
 document.getElementById('inputDate').value = getToday();
 
 // ==========================================
@@ -1196,18 +1291,242 @@ document.getElementById('inputDate').value = getToday();
     container.innerHTML = html;
   }
 
-  function renderAllStats() { renderSummary(); renderStats(); renderFundTable(); }
+
+  // SVG 饼图绘制（甜甜圈图）
+  function drawPieChart(containerId, stats) {
+    var container = document.getElementById(containerId);
+    var emptyEl = document.getElementById('statsPieEmpty');
+    container.innerHTML = '';
+    if (stats.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    var total = stats.reduce(function(s, x) { return s + x.amount; }, 0);
+    if (total === 0) return;
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var size = 240, cx = 120, cy = 120, r = 95;
+
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('class', 'pie-svg');
+
+    var angle = -Math.PI / 2;
+    stats.forEach(function(s, i) {
+      var sliceAngle = (s.amount / total) * 2 * Math.PI;
+      var x1 = cx + r * Math.cos(angle);
+      var y1 = cy + r * Math.sin(angle);
+      var x2 = cx + r * Math.cos(angle + sliceAngle);
+      var y2 = cy + r * Math.sin(angle + sliceAngle);
+      var largeArc = sliceAngle > Math.PI ? 1 : 0;
+
+      var path = document.createElementNS(svgNS, 'path');
+      var d = 'M' + cx + ',' + cy + ' L' + x1.toFixed(3) + ',' + y1.toFixed(3) + ' A' + r + ',' + r + ' 0 ' + largeArc + ',1 ' + x2.toFixed(3) + ',' + y2.toFixed(3) + ' Z';
+      path.setAttribute('d', d);
+      path.setAttribute('fill', STAT_COLORS[i % STAT_COLORS.length]);
+      path.setAttribute('stroke', '#fff');
+      path.setAttribute('stroke-width', '1.5');
+      svg.appendChild(path);
+
+      angle += sliceAngle;
+    });
+
+    // 中心圆（甜甜圈效果）
+    var circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', 55);
+    circle.setAttribute('fill', '#f8fafc');
+    svg.appendChild(circle);
+
+    // 中心文字
+    var text = document.createElementNS(svgNS, 'text');
+    text.setAttribute('x', cx);
+    text.setAttribute('y', cy - 6);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', '15');
+    text.setAttribute('font-weight', '700');
+    text.setAttribute('fill', '#1e293b');
+    text.textContent = '¥' + total.toFixed(0);
+    svg.appendChild(text);
+
+    var text2 = document.createElementNS(svgNS, 'text');
+    text2.setAttribute('x', cx);
+    text2.setAttribute('y', cy + 14);
+    text2.setAttribute('text-anchor', 'middle');
+    text2.setAttribute('font-size', '11');
+    text2.setAttribute('fill', '#64748b');
+    text2.textContent = '支出总额';
+    svg.appendChild(text2);
+
+    // 图例
+    var legendHtml = '';
+    stats.forEach(function(s, i) {
+      legendHtml += '<div class="pie-legend-item">'
+        + '<span class="pie-dot" style="background:' + STAT_COLORS[i % STAT_COLORS.length] + '"></span>'
+        + '<span class="pie-name">' + s.category.icon + ' ' + s.category.name + '</span>'
+        + '<span class="pie-pct">' + s.percent.toFixed(1) + '%</span>'
+        + '</div>';
+    });
+
+    var xmlSerializer = new XMLSerializer();
+    container.innerHTML = '<div class="pie-chart-wrap">' + xmlSerializer.serializeToString(svg) + '<div class="pie-legend">' + legendHtml + '</div></div>';
+  }
+
+  // 消费分析
+  function renderConsumptionAnalysis() {
+    var month = document.getElementById('monthSelector').value;
+    var expStats = getCategoryStats(month, 'expense');
+    var container = document.getElementById('consumptionAnalysis');
+    var emptyEl = document.getElementById('statsAnalysisEmpty');
+
+    if (expStats.length === 0) {
+      container.innerHTML = '';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    var total = expStats.reduce(function(s, x) { return s + x.amount; }, 0);
+    var top1 = expStats[0];
+    var top3Total = expStats.slice(0, Math.min(3, expStats.length)).reduce(function(s, x) { return s + x.amount; }, 0);
+    var top3Pct = total > 0 ? (top3Total / total * 100) : 0;
+
+    var parts = month.split('-');
+    var days = new Date(parseInt(parts[0]), parseInt(parts[1]), 0).getDate();
+    var dailyAvg = total / days;
+
+    var incStats = getCategoryStats(month, 'income');
+    var totalInc = incStats.reduce(function(s, x) { return s + x.amount; }, 0);
+    var savingsRate = totalInc > 0 ? ((totalInc - total) / totalInc * 100) : 0;
+
+    var html = '<div class="analysis-cards">';
+    html += '<div class="analysis-card"><div class="a-label">最大支出类别</div><div class="a-value" style="color:var(--color-expense)">' + top1.category.icon + ' ' + top1.category.name + '</div><div class="a-detail">占总支出的 ' + top1.percent.toFixed(1) + '%</div></div>';
+    html += '<div class="analysis-card"><div class="a-label">前三类合计</div><div class="a-value" style="color:var(--color-expense)">¥' + top3Total.toFixed(2) + '</div><div class="a-detail">占总支出的 ' + top3Pct.toFixed(1) + '%</div></div>';
+    html += '<div class="analysis-card"><div class="a-label">日均支出</div><div class="a-value">¥' + dailyAvg.toFixed(2) + '</div><div class="a-detail">本月共 ' + days + ' 天</div></div>';
+    html += '<div class="analysis-card"><div class="a-label">储蓄率</div><div class="a-value" style="color:' + (savingsRate >= 0 ? 'var(--color-income)' : 'var(--color-expense)') + '">' + savingsRate.toFixed(1) + '%</div><div class="a-detail">收入 ¥' + totalInc.toFixed(2) + ' / 支出 ¥' + total.toFixed(2) + '</div></div>';
+    html += '</div>';
+
+    // 洞察建议
+    var insights = [];
+    if (top1.percent > 50) {
+      insights.push('⚠️「' + top1.category.name + '」占总支出一半以上，建议关注此项开支是否合理。');
+    } else if (top1.percent > 30) {
+      insights.push('💡「' + top1.category.name + '」是本月最大支出项（' + top1.percent.toFixed(0) + '%），可考虑优化。');
+    }
+    if (savingsRate < 0) {
+      insights.push('🔴 本月入不敷出，支出超收入 ¥' + Math.abs(totalInc - total).toFixed(2) + '，建议审视消费。');
+    } else if (savingsRate < 20 && totalInc > 0) {
+      insights.push('🟡 储蓄率偏低（' + savingsRate.toFixed(0) + '%），建议控制非必要支出。');
+    } else if (savingsRate >= 50 && totalInc > 0) {
+      insights.push('🟢 储蓄率优秀（' + savingsRate.toFixed(0) + '%），理财习惯良好！');
+    }
+    if (dailyAvg > 200) {
+      insights.push('📊 日均支出 ¥' + dailyAvg.toFixed(0) + '，留意大额消费。');
+    }
+    if (insights.length > 0) {
+      html += '<div class="analysis-insight"><strong>📋 分析建议</strong><br>' + insights.join('<br>') + '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  // 初始基金结存（历史余额，仅用于统计计算）
+  var INITIAL_FUND_BALANCES = {
+    '基础基金': 57383.29,
+    '育儿基金': 20708.79,
+    '教育基金': 36000.00,
+    '备用基金': 26900.00
+  };
+
+  // 年度汇总
+  function getYearlySummary(year, fund) {
+    var bills = getBills().filter(function(b) { return b.date.startsWith(year); });
+    if (fund) bills = bills.filter(function(b) { return b.fund === fund; });
+    var income = 0, expense = 0;
+    bills.forEach(function(b) {
+      if (b.type === 'income') income += b.amount; else expense += b.amount;
+    });
+    return { income: income, expense: expense, balance: income - expense };
+  }
+
+  // 全部汇总（含初始结存）
+  function getTotalSummary(fund) {
+    var bills = getBills();
+    if (fund) bills = bills.filter(function(b) { return b.fund === fund; });
+    var income = 0, expense = 0;
+    bills.forEach(function(b) {
+      if (b.type === 'income') income += b.amount; else expense += b.amount;
+    });
+    // 累加初始基金结存
+    var initialBalance = 0;
+    if (fund) {
+      initialBalance = INITIAL_FUND_BALANCES[fund] || 0;
+    } else {
+      Object.keys(INITIAL_FUND_BALANCES).forEach(function(f) {
+        initialBalance += INITIAL_FUND_BALANCES[f];
+      });
+    }
+    return { income: income, expense: expense, balance: income - expense + initialBalance };
+  }
+
+  // 渲染年度结存 + 总结存
+  function renderAnnualTotalBalance() {
+    var year = document.getElementById('yearSelector').value;
+    var fund = document.getElementById('fundBalanceSelector').value;
+    var ys = getYearlySummary(year, fund);
+    document.getElementById('annualIncome').textContent = '¥' + ys.income.toFixed(2);
+    document.getElementById('annualExpense').textContent = '¥' + ys.expense.toFixed(2);
+    var balEl = document.getElementById('annualBalance');
+    balEl.textContent = (ys.balance >= 0 ? '¥' : '-¥') + Math.abs(ys.balance).toFixed(2);
+    balEl.style.color = ys.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
+
+    var ts = getTotalSummary(fund);
+    var totalEl = document.getElementById('totalBalance');
+    totalEl.textContent = (ts.balance >= 0 ? '¥' : '-¥') + Math.abs(ts.balance).toFixed(2);
+    totalEl.style.color = ts.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)';
+  }
+
+  function populateYearSelector() {
+    var sel = document.getElementById('yearSelector');
+    var years = {};
+    getBills().forEach(function(b) {
+      var y = b.date.substring(0, 4);
+      years[y] = true;
+    });
+    var currentYear = new Date().getFullYear().toString();
+    if (!years[currentYear]) years[currentYear] = true;
+    var yearList = Object.keys(years).sort().reverse();
+    sel.innerHTML = yearList.map(function(y) { return '<option value="' + y + '">' + y + '年</option>'; }).join('');
+    sel.value = currentYear;
+  }
+  function renderAllStats() { renderSummary(); renderStats(); renderFundTable(); drawPieChart('pieChartContainer', getCategoryStats(document.getElementById('monthSelector').value, 'expense')); renderConsumptionAnalysis(); renderAnnualTotalBalance(); }
 
   // 月份选择器变更时刷新统计
   document.getElementById('monthSelector').addEventListener('change', function() {
     renderAllStats();
-    // 同步账单筛选的月份
     billFilter.month = this.value;
     document.getElementById('filterMonth').value = this.value;
   });
 
+  // 年份选择器变更时刷新年度结存
+  document.getElementById('yearSelector').addEventListener('change', function() {
+    renderAnnualTotalBalance();
+  });
+
+  // 基金选择器变更时刷新年度结存
+  document.getElementById('fundBalanceSelector').addEventListener('change', function() {
+    renderAnnualTotalBalance();
+  });
+
   // 初始渲染统计
   renderAllStats();
+  populateYearSelector();
+  renderAnnualTotalBalance();
 
   // 扩展 refreshAll
   var _origRefreshAll = refreshAll;
@@ -1215,6 +1534,8 @@ document.getElementById('inputDate').value = getToday();
     _origRefreshAll();
     renderAllStats();
     populateMonthSelector();
+    populateYearSelector();
+    renderAnnualTotalBalance();
   };
 
 
